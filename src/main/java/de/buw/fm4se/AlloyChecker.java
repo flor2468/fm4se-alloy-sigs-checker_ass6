@@ -46,29 +46,16 @@ public class AlloyChecker {
 
 
         for (int i = 0; i < allsigs.size(); ++i) {
-            System.out.println("signature to check: " + allsigs.get(i));
-
 
             for (Command command : world.getAllCommands()) {
 
 
-                Expr expr1 = allsigs.get(i).no();
-                System.out.println("expr: " + expr1);
-                System.out.println("command: " + command);
-                Command command1 = command.change(expr1.always());
-                System.out.println("command1: " + command1);
+                command.change(allsigs.get(i).no().always()); // Change command to check if the current feature can always be removed
 
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
 
-                // Execute the command
-                System.out.println("============ Command: " + command1.toString() + ": ============");
+                  if (ans.eval(allsigs.get(i)).size() == 0){
 
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command1, options);
-                // Print the outcome
-
-                System.out.println("______________________________________________________");
-                System.out.println("ans.eval(allsigs.get(i)): " + ans.eval(allsigs.get(i)));
-
-                if (ans.satisfiable()) {
                     deadSigs.add(allsigs.get(i).toString());
                     // You can query "ans" to find out the values of each set or
                     // type.
