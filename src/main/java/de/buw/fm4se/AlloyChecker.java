@@ -1,5 +1,6 @@
 package de.buw.fm4se;
 
+import java.beans.Expression;
 import java.security.Signature;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,8 +79,143 @@ public class AlloyChecker {
     }
 
     public static List<String> findCoreSignatures(String fileName, A4Options options, A4Reporter rep) {
-        // TODO Task 2
-        return null;
+
+
+
+
+        System.out.println("File: " + fileName);
+
+
+
+
+
+
+
+        System.out.println("findCoreSignatures");
+
+        VizGUI viz = null;
+
+        Module world = CompUtil.parseEverything_fromFile(rep, null, fileName);
+
+        //Use the first command in the Alloy file. To see how to parse Alloy models and how to access commands see, e.g.,
+        // lines 57 and 65 in class ExampleUsingTheCompiler.
+
+
+        SafeList<Sig> allsigs = world.getAllSigs();
+
+        List<String> dead = findDeadSignatures(fileName,options,rep);
+
+        List<String> coresigs = new ArrayList<>();
+
+
+        for (int i = 0; i < allsigs.size(); ++i){
+            if(!dead.contains(allsigs.get(i).toString())){
+
+                coresigs.add(allsigs.get(i).toString());
+
+
+
+
+                // Feature allsigs.get(i) is not a dead feature
+
+
+                for (Command command : world.getAllCommands()) {
+
+
+                    command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
+
+                    A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
+
+
+                    if (ans.satisfiable()){ // ans.eval(allsigs.get(i)).size() == dead.sinze() // eval(allsigs.get(i)).size() != 0
+
+
+                        //coresigs.add(allsigs.get(i).toString());
+                        /*/
+                        //coreSigs.add(allsigs.get(i).toString());
+                        // You can query "ans" to find out the values of each set or
+                        // type.
+                        // This can be useful for debugging.
+                        //
+                        // You can also write the outcome to an XML file
+                        ans.writeXML("alloy_example_output.xml");
+                        //
+                        // You can then visualize the XML file by calling this:
+                        if (viz == null) {
+                            viz = new VizGUI(false, "alloy_example_output.xml", null);
+                        } else {
+                            viz.loadXML("alloy_example_output.xml", true);
+                        }/**/
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+            }
+        }
+        System.out.println("Core features: " + coresigs);
+        return coresigs;
+
+
+/*/
+
+
+
+
+
+
+
+
+        // You may update the predicate a command cmd checks to expression e by using the returned Command of cmd.change(e).
+
+
+        // To see how you can create formulas from signatures and other formulas see, e.g., line 90 in class ExampleUsingTheAPI.
+        //Expr expr1 = A.some().and(atMost3.call(B, B));
+
+
+
+        List<String> coreSigs = new ArrayList<>();
+
+
+
+        for (int i = 0; i < allsigs.size(); ++i) {
+
+            for (Command command : world.getAllCommands()) {
+
+
+                command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
+
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
+
+                if (ans.eval(allsigs.get(i)).size() != 0){
+
+                    coreSigs.add(allsigs.get(i).toString());
+                    // You can query "ans" to find out the values of each set or
+                    // type.
+                    // This can be useful for debugging.
+                    //
+                    // You can also write the outcome to an XML file
+                    ans.writeXML("alloy_example_output.xml");
+                    //
+                    // You can then visualize the XML file by calling this:
+                    if (viz == null) {
+                        viz = new VizGUI(false, "alloy_example_output.xml", null);
+                    } else {
+                        viz.loadXML("alloy_example_output.xml", true);
+                    }
+                }
+            }
+        }
+        System.out.println("Core features: " + coreSigs);
+        return coreSigs;/**/
     }
 
     /**
