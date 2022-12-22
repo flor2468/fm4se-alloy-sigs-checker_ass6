@@ -82,12 +82,6 @@ public class AlloyChecker {
     public static List<String> findCoreSignatures(String fileName, A4Options options, A4Reporter rep) {
 
 
-        System.out.println("File: " + fileName);
-
-
-        System.out.println("findCoreSignatures");
-
-        VizGUI viz = null;
 
         Module world = CompUtil.parseEverything_fromFile(rep, null, fileName);
 
@@ -97,56 +91,47 @@ public class AlloyChecker {
 
         SafeList<Sig> allsigs = world.getAllSigs();
 
-        List<String> dead = findDeadSignatures(fileName, options, rep);
+        System.out.println("File: " + fileName);
+        System.out.println("findCoreSignatures");
+        System.out.println("allsigs: " + allsigs);
+
 
         List<String> coresigs = new ArrayList<>();
 
 
         for (int i = 0; i < allsigs.size(); ++i) {
-            if (!dead.contains(allsigs.get(i).toString())) {
+            System.out.println("=====================================================================");
+            for (Command command : world.getAllCommands()) {
+                try {
+                    //command = command.change(allsigs.get(i).not()); // Change command to check if the current feature can always be removed
+                    command.change(allsigs.get(i).no().always());
 
-                coresigs.add(allsigs.get(i).toString());
+                    System.out.println("command: : " + command.getScope(allsigs.get(i)));
+                    A4Solution ans = TranslateAlloyToKodkod.execute_command(rep,world.getAllReachableSigs() , command, options);
 
+                    System.out.println("Current checked signature: : " + allsigs.get(i));
+                    System.out.println("ans.satisfiable(): " + ans.satisfiable());
 
-                // Feature allsigs.get(i) is not a dead feature
+                    System.out.println("ans.eval(allsigs.get(i)).size(): " + ans.eval(allsigs.get(i)).size());
 
-
-                for (Command command : world.getAllCommands()) {
-
-
-                    command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
-
-                    A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
-
-                    //ans.getAllReachableSigs()
-
-                    if (ans.satisfiable()) { // ans.eval(allsigs.get(i)).size() == dead.sinze() // eval(allsigs.get(i)).size() != 0
-
-
-                        //coresigs.add(allsigs.get(i).toString());
-                        /*/
-                        //coreSigs.add(allsigs.get(i).toString());
-                        // You can query "ans" to find out the values of each set or
-                        // type.
-                        // This can be useful for debugging.
-                        //
-                        // You can also write the outcome to an XML file
-                        ans.writeXML("alloy_example_output.xml");
-                        //
-                        // You can then visualize the XML file by calling this:
-                        if (viz == null) {
-                            viz = new VizGUI(false, "alloy_example_output.xml", null);
-                        } else {
-                            viz.loadXML("alloy_example_output.xml", true);
-                        }/**/
+                    if (ans.eval(allsigs.get(i)).size() > 0) { // ans.satisfiable() &&
+                        coresigs.add(allsigs.get(i).toString());
                     }
+                } catch (Exception e) {
+
                 }
-
-
             }
         }
+        System.out.println("=====================================================================");
+        System.out.println("=====================================================================");
+        System.out.println("=====================================================================");
         System.out.println("Core features: " + coresigs);
         return coresigs;
+
+
+
+
+
 
 
 /*/
@@ -229,36 +214,21 @@ public class AlloyChecker {
 
         for (int i = 0; i < allsigs.size(); ++i) {
 
-            //System.out.println("====================================================================");
-            //System.out.println("signature i: " + allsigs.get(i));
-
             for (Command command : world.getAllCommands()) {
 
                 int maxScope = getMaxScope(allsigs.get(i), command);
 
-                //System.out.println("scope_signature: " + scope_signature);
-
                 for (int scope = maxScope; 0 <= scope; --scope) {
 
-                    //System.out.println("--------------------------------------------------------------------");
-                    //command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
-
-                    command = command.change(allsigs.get(i),false,scope);
+                    command = command.change(allsigs.get(i), false, scope);
 
                     try {
                         A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
 
-                        //System.out.println("scope: " + scope);
-                        //System.out.println("ans.satisfiable(): " + ans.satisfiable());
-                        //System.out.println("ans.hasConfigs(): " + ans.hasConfigs());
-
-                        //System.out.println("ans.eval(allsigs.get(i)): " + ans.eval(allsigs.get(i)));
-
                         if (ans.hasConfigs()) {
                             minScope.put(allsigs.get(i).toString(), scope);
                         }
-                    }catch (Exception e){
-                        //e.printStackTrace();
+                    } catch (Exception e) {
                     }
                 }
 
