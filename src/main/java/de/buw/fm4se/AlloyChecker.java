@@ -3,6 +3,7 @@ package de.buw.fm4se;
 import java.beans.Expression;
 import java.security.Signature;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +56,7 @@ public class AlloyChecker {
 
                 A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
 
-                  if (ans.eval(allsigs.get(i)).size() == 0){
+                if (ans.eval(allsigs.get(i)).size() == 0) {
 
                     deadSigs.add(allsigs.get(i).toString());
                     // You can query "ans" to find out the values of each set or
@@ -81,14 +82,7 @@ public class AlloyChecker {
     public static List<String> findCoreSignatures(String fileName, A4Options options, A4Reporter rep) {
 
 
-
-
         System.out.println("File: " + fileName);
-
-
-
-
-
 
 
         System.out.println("findCoreSignatures");
@@ -103,17 +97,15 @@ public class AlloyChecker {
 
         SafeList<Sig> allsigs = world.getAllSigs();
 
-        List<String> dead = findDeadSignatures(fileName,options,rep);
+        List<String> dead = findDeadSignatures(fileName, options, rep);
 
         List<String> coresigs = new ArrayList<>();
 
 
-        for (int i = 0; i < allsigs.size(); ++i){
-            if(!dead.contains(allsigs.get(i).toString())){
+        for (int i = 0; i < allsigs.size(); ++i) {
+            if (!dead.contains(allsigs.get(i).toString())) {
 
                 coresigs.add(allsigs.get(i).toString());
-
-
 
 
                 // Feature allsigs.get(i) is not a dead feature
@@ -126,8 +118,9 @@ public class AlloyChecker {
 
                     A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
 
+                    //ans.getAllReachableSigs()
 
-                    if (ans.satisfiable()){ // ans.eval(allsigs.get(i)).size() == dead.sinze() // eval(allsigs.get(i)).size() != 0
+                    if (ans.satisfiable()) { // ans.eval(allsigs.get(i)).size() == dead.sinze() // eval(allsigs.get(i)).size() != 0
 
 
                         //coresigs.add(allsigs.get(i).toString());
@@ -148,15 +141,6 @@ public class AlloyChecker {
                         }/**/
                     }
                 }
-
-
-
-
-
-
-
-
-
 
 
             }
@@ -229,8 +213,62 @@ public class AlloyChecker {
      * @return map from signature names to minimum scopes
      */
     public static Map<String, Integer> findMinScope(String fileName, A4Options options, A4Reporter rep) {
-        // TODO Task 3
-        return null;
+
+
+        System.out.println("File: " + fileName);
+        System.out.println("findMinScope");
+
+
+        Module world = CompUtil.parseEverything_fromFile(rep, null, fileName);
+
+        SafeList<Sig> allsigs = world.getAllSigs();
+
+        System.out.println(allsigs);
+
+        Map<String, Integer> minScope = new HashMap<>();
+
+        for (int i = 0; i < allsigs.size(); ++i) {
+
+            //System.out.println("====================================================================");
+            //System.out.println("signature i: " + allsigs.get(i));
+
+            for (Command command : world.getAllCommands()) {
+
+                int maxScope = getMaxScope(allsigs.get(i), command);
+
+                //System.out.println("scope_signature: " + scope_signature);
+
+                for (int scope = maxScope; 0 <= scope; --scope) {
+
+                    //System.out.println("--------------------------------------------------------------------");
+                    //command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
+
+                    command = command.change(allsigs.get(i),false,scope);
+
+                    try {
+                        A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
+
+                        //System.out.println("scope: " + scope);
+                        //System.out.println("ans.satisfiable(): " + ans.satisfiable());
+                        //System.out.println("ans.hasConfigs(): " + ans.hasConfigs());
+
+                        //System.out.println("ans.eval(allsigs.get(i)): " + ans.eval(allsigs.get(i)));
+
+                        if (ans.hasConfigs()) {
+                            minScope.put(allsigs.get(i).toString(), scope);
+                        }
+                    }catch (Exception e){
+                        //e.printStackTrace();
+                    }
+                }
+
+
+            }
+        }
+        System.out.println("Min Scope: " + minScope);
+
+
+        return minScope;
 
     }
 
