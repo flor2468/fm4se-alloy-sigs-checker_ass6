@@ -93,98 +93,27 @@ public class AlloyChecker {
 
         System.out.println("File: " + fileName);
         System.out.println("findCoreSignatures");
-        System.out.println("allsigs: " + allsigs);
+        System.out.println("allsigs: " + allsigs.size());
 
 
         List<String> coresigs = new ArrayList<>();
 
 
         for (int i = 0; i < allsigs.size(); ++i) {
-            System.out.println("=====================================================================");
             for (Command command : world.getAllCommands()) {
-                try {
-                    //command = command.change(allsigs.get(i).not()); // Change command to check if the current feature can always be removed
-                    command.change(allsigs.get(i).no().always());
 
-                    System.out.println("command: : " + command.getScope(allsigs.get(i)));
-                    A4Solution ans = TranslateAlloyToKodkod.execute_command(rep,world.getAllReachableSigs() , command, options);
+                command = command.change(allsigs.get(i).no());
 
-                    System.out.println("Current checked signature: : " + allsigs.get(i));
-                    System.out.println("ans.satisfiable(): " + ans.satisfiable());
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep,world.getAllReachableSigs() , command, options);
 
-                    System.out.println("ans.eval(allsigs.get(i)).size(): " + ans.eval(allsigs.get(i)).size());
-
-                    if (ans.eval(allsigs.get(i)).size() > 0) { // ans.satisfiable() &&
-                        coresigs.add(allsigs.get(i).toString());
-                    }
-                } catch (Exception e) {
-
+                if (!ans.satisfiable()){
+                    coresigs.add(allsigs.get(i).toString());
                 }
             }
         }
-        System.out.println("=====================================================================");
-        System.out.println("=====================================================================");
-        System.out.println("=====================================================================");
         System.out.println("Core features: " + coresigs);
+        System.out.println("=====================================================================");
         return coresigs;
-
-
-
-
-
-
-
-/*/
-
-
-
-
-
-
-
-
-        // You may update the predicate a command cmd checks to expression e by using the returned Command of cmd.change(e).
-
-
-        // To see how you can create formulas from signatures and other formulas see, e.g., line 90 in class ExampleUsingTheAPI.
-        //Expr expr1 = A.some().and(atMost3.call(B, B));
-
-
-
-        List<String> coreSigs = new ArrayList<>();
-
-
-
-        for (int i = 0; i < allsigs.size(); ++i) {
-
-            for (Command command : world.getAllCommands()) {
-
-
-                command.change(allsigs.get(i).some()); // Change command to check if the current feature can always be removed
-
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
-
-                if (ans.eval(allsigs.get(i)).size() != 0){
-
-                    coreSigs.add(allsigs.get(i).toString());
-                    // You can query "ans" to find out the values of each set or
-                    // type.
-                    // This can be useful for debugging.
-                    //
-                    // You can also write the outcome to an XML file
-                    ans.writeXML("alloy_example_output.xml");
-                    //
-                    // You can then visualize the XML file by calling this:
-                    if (viz == null) {
-                        viz = new VizGUI(false, "alloy_example_output.xml", null);
-                    } else {
-                        viz.loadXML("alloy_example_output.xml", true);
-                    }
-                }
-            }
-        }
-        System.out.println("Core features: " + coreSigs);
-        return coreSigs;/**/
     }
 
     /**
