@@ -2,6 +2,7 @@ package de.buw.fm4se;
 
 import java.beans.Expression;
 import java.security.Signature;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,21 +30,7 @@ public class AlloyChecker {
         VizGUI viz = null;
 
         Module world = CompUtil.parseEverything_fromFile(rep, null, fileName);
-
-        //Use the first command in the Alloy file. To see how to parse Alloy models and how to access commands see, e.g.,
-        // lines 57 and 65 in class ExampleUsingTheCompiler.
-
-
         SafeList<Sig> allsigs = world.getAllSigs();
-
-
-        // You may update the predicate a command cmd checks to expression e by using the returned Command of cmd.change(e).
-
-
-        // To see how you can create formulas from signatures and other formulas see, e.g., line 90 in class ExampleUsingTheAPI.
-        //Expr expr1 = A.some().and(atMost3.call(B, B));
-
-
         List<String> deadSigs = new ArrayList<>();
 
 
@@ -85,34 +72,32 @@ public class AlloyChecker {
 
         Module world = CompUtil.parseEverything_fromFile(rep, null, fileName);
 
-        //Use the first command in the Alloy file. To see how to parse Alloy models and how to access commands see, e.g.,
-        // lines 57 and 65 in class ExampleUsingTheCompiler.
+        ConstList<Sig> allReachableSigs = world.getAllReachableUserDefinedSigs(); // if this function is used to get the signatures, the dreadburry tests passes as well
+        // if world.getAllSigs() is used, the dreadburry test fails as the only one because it has 12 instead of 14 signatures
 
-
-        SafeList<Sig> allsigs = world.getAllSigs();
 
         System.out.println("File: " + fileName);
         System.out.println("findCoreSignatures");
-        System.out.println("allsigs: " + allsigs.size());
+        System.out.println("allReachableSigs: " + allReachableSigs.size());
 
 
         List<String> coresigs = new ArrayList<>();
 
 
-        for (int i = 0; i < allsigs.size(); ++i) {
+        for (int i = 0; i < allReachableSigs.size(); ++i) {
             for (Command command : world.getAllCommands()) {
 
-                command = command.change(allsigs.get(i).no());
+                command = command.change(allReachableSigs.get(i).no()); // no instance of the current feature is wanted
 
                 A4Solution ans = TranslateAlloyToKodkod.execute_command(rep,world.getAllReachableSigs() , command, options);
 
                 if (!ans.satisfiable()){
-                    coresigs.add(allsigs.get(i).toString());
+                    // the current feature is a core feature
+                    coresigs.add(allReachableSigs.get(i).toString());
                 }
             }
         }
         System.out.println("Core features: " + coresigs);
-        System.out.println("=====================================================================");
         return coresigs;
     }
 
@@ -139,7 +124,7 @@ public class AlloyChecker {
 
         System.out.println(allsigs);
 
-        Map<String, Integer> minScope = new HashMap<>();
+        Map<String, Integer> minScope = new HashMap<>(); // hashmap
 
         for (int i = 0; i < allsigs.size(); ++i) {
 
@@ -147,13 +132,14 @@ public class AlloyChecker {
 
                 int maxScope = getMaxScope(allsigs.get(i), command);
 
-                for (int scope = maxScope; 0 <= scope; --scope) {
+                for (int scope = maxScope; 0 <= scope; --scope) { // we check from the max scope to the min scope
 
-                    command = command.change(allsigs.get(i), false, scope);
+                    command = command.change(allsigs.get(i), false, scope); // update command 
 
                     try {
                         A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
 
+                        // if we have configurations, we update the min scope value
                         if (ans.hasConfigs()) {
                             minScope.put(allsigs.get(i).toString(), scope);
                         }
